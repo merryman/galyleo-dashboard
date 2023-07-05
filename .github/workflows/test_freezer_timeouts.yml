@@ -26,7 +26,7 @@ jobs:
       - name: Test freezer timeouts
         run: |
           successful_builds=0
-          for i in {1..5}
+          for i in {1..25}
           do
             npm run build --prefix local_projects/engageLively--galyleo-dashboard
             # If the build was successful, increment the counter
@@ -36,4 +36,4 @@ jobs:
           done
 
           # Print the number of successful builds
-          echo "Number of successful builds: $successful_builds of 5"
+          echo "Number of successful builds: $successful_builds of 25"
