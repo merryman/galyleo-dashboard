@@ -1,0 +1,39 @@
+name: Build Project
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout lively.next
+        uses: actions/checkout@v3
+        with:
+          repository: LivelyKernel/lively.next
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18.12.1'
+      - name: Install lively.next
+        run: |
+          chmod a+x ./install.sh
+          ./install.sh
+      - name: Checkout Project Repository
+        uses: actions/checkout@v3
+        with:
+          path: local_projects/engageLively--galyleo-dashboard
+      - name: Test freezer timeouts
+        run: |
+          successful_builds=0
+          for i in {1..5}
+          do
+            npm run build --prefix local_projects/engageLively--galyleo-dashboard
+            # If the build was successful, increment the counter
+            if [ $? -eq 0 ]; then
+               successful_builds=$((successful_builds+1))
+            fi
+          done
+
+          # Print the number of successful builds
+          echo "Number of successful builds: $successful_builds of 5"
