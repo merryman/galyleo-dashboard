@@ -10,8 +10,7 @@ import { Toggle } from './inputs/toggle.cp.js';
 import { URL } from 'esm://cache/npm:@jspm/core@2.0.0-beta.26/nodelibs/url';
 import { DefaultList } from 'lively.components/list.cp.js';
 import { projectAsset } from 'lively.project/helpers.js';
-
-const STUDIO_SECRET = 'g4lyl30-studio';
+import { dashboardStoreServer } from '../config.js';
 
 /**
  * A Bug Reporter.  Very simple: just bundles up the input fields and uses
@@ -259,9 +258,9 @@ class URLDisplayModel extends ViewModel {
    * @param { string } dashboardURL - The URL of the dashboard to display
    */
   init (dashboardURL) {
-    this._setURL(this.ui.dashboardUrl, 'The Dashboard is published at:', dashboardURL);
+    this._setURL(this.ui.dashboardUrl, 'The Dashboard is published at:', dashboardURL.dashboard);
     const viewString = `https://galyleo.app/published/index.html?dashboard=${dashboardURL}`;
-    this._setURL(this.ui.dashboardViewUrl, 'The Dashboard can be viewed  at:', viewString);
+    this._setURL(this.ui.dashboardViewUrl, 'The Dashboard can be viewed  at:', dashboardURL.view);
   }
 
   close () {
@@ -398,16 +397,15 @@ export class PublisherModel extends ViewModel {
     if (fileName && fileName.length > 0) {
       this.ui.fileInput.textString = fileName;
     }
+    const urlQuery = dashboardStoreServer.url + (userName ? `/list_user_dashboards/${userName}` : '/list_dashboards');
     if (userName) {
-      const reader = resource(`${this.url}/list_user_dashboards/${userName}`);
-      reader.readJson().then(result => {
-        this.currentDashboards = result;
-        this.ui.dashboardList.items = result;
-      });
       this.userName = userName;
-    } else {
-      this.currentDashboards = [];
     }
+    const reader = resource(urlQuery);
+    reader.readJson().then(result => {
+      this.currentDashboards = result;
+      this.ui.dashboardList.items = result;
+    });
     this.dashboard = dashboard;
   }
 
@@ -456,17 +454,19 @@ export class PublisherModel extends ViewModel {
     }
 
     if (await this._sanityCheck(filePath)) {
-      const r = resource(`${this.url}add_dashboard`, { headers: { 'Content-Type': 'application/json' } });
+      const r = resource(`${dashboardStoreServer.url}/add_dashboard`, { headers: { 'Content-Type': 'application/json' } });
       const body = {
         name: filePath,
         dashboard: this.dashboard.prepareSerialization(),
-        studio_secret: STUDIO_SECRET
+        studio_secret: dashboardStoreServer.secret
       };
+
       if (this.userName) {
         body.user = this.userName;
       }
       r.contentType = 'application/json';
-      const response = await r.post(JSON.stringify(body));
+      r.useCors = true;
+      const response = JSON.parse(await r.post(body));
       const urlDisplay = part(URLDisplay);
       urlDisplay.init(response);
       urlDisplay.openInWorld();
@@ -474,14 +474,11 @@ export class PublisherModel extends ViewModel {
     }
   }
 
-  get url () {
-    return 'https://publication-server-htztskumkq-uw.a.run.app/';
-  }
-
   close () {
     this.view.remove();
   }
 }
+
 
 // part(Publisher).openInWorld()
 const Publisher = component(GalyleoWindow, {

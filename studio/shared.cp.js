@@ -12,7 +12,7 @@ import { ConfirmPromptModel } from 'lively.components/prompts.cp.js';
 import { ButtonModel } from 'lively.components/buttons.js';
 import { projectAsset } from 'lively.project/helpers.js';
 
-const galyleoFont = 'Sans-Serif'; // formerly 'Barlow', changed due to failure to import
+const galyleoFont = 'Noto Sans';
 
 export class SelectableEntryModel extends ViewModel {
   static wrap (entryName, opts) {
@@ -581,29 +581,22 @@ export class GalyleoDropDownListModel extends DropDownListModel {
         get () {
           return [...super.prototype.expose, 'toggleError'];
         }
-      },
-      items: {
-        derived: true,
-        after: ['listMorph'],
-        get () { return this.listMorph.items; },
-        set (value) {
-          const updateSelection = this.items.find(item => item.value === this.selection);
-          this.listMorph.items = [{
-            isListItem: true,
-            isPlaceholder: true,
-            value: '__no_selection__',
-            label: [this.placeholder, {
-              fontStyle: 'italic', opacity: 0.5
-            }]
-          }, ...value.filter(item => !item.isPlaceholder)];
-          if (updateSelection) {
-            noUpdate(() => {
-              this.selection = this.items[0].value;
-            });
-          }
-        }
       }
     };
+  }
+
+  updateListMorphIfNeeded () {
+    if (super.updateListMorphIfNeeded()) {
+      // insert the placeholder
+      this.listMorph.items = [{
+        isListItem: true,
+        isPlaceholder: true,
+        value: '__no_selection__',
+        label: [this.placeholder, {
+          fontStyle: 'italic', opacity: 0.5
+        }]
+      }, ...this.items.filter(item => !item.isPlaceholder)];
+    }
   }
 
   toggleError () {

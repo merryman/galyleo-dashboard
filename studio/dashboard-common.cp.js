@@ -47,13 +47,13 @@ class DashboardCommon extends ViewModel {
       gViz: {
         derived: true,
         get () {
-          return window.google.visualization;
+          return window.google ? window.google.visualization : null;
         }
       },
       gCharts: {
         derived: true,
         get () {
-          return window.google.charts;
+          return window.google ? window.google.charts : null;
         }
       },
       expose: {
@@ -344,7 +344,7 @@ class DashboardCommon extends ViewModel {
     return [
       { name: 'fixedHeight', validCheck: value => typeof value === 'boolean', default: false },
       { name: 'fixedWidth', validCheck: value => typeof value === 'boolean', default: false },
-      { name: 'fontFamily', validCheck: family => typeof family === 'string', default: 'Sans-serif' }, // need a better check here
+      { name: 'fontFamily', validCheck: family => typeof family === 'string', default: 'Noto Sans' }, // need a better check here
       { name: 'fontSize', validCheck: fontSize => !isNaN(fontSize) && fontSize > 0, default: 11 },
       { name: 'fontStyle', validCheck: style => styles.indexOf(style) >= 0, default: 'normal' },
       { name: 'fontWeight', validCheck: weight => weights.indexOf(weight) >= 0, default: 'normal' },
@@ -965,6 +965,9 @@ class DashboardCommon extends ViewModel {
    * @returns { DataView|DataTable } - The prepared table/view.
    */
   async prepareData (viewOrTable) {
+    if (!this.gViz) {
+      return null;
+    }
     if (this.dataManager.tableNames.indexOf(viewOrTable) >= 0) {
       const table = this.dataManager.tables[viewOrTable];
       const columns = table.columns.map(column => this._createGVizColumn(column));
@@ -1217,7 +1220,9 @@ class DashboardCommon extends ViewModel {
         this[prop] = {};
       }
     });
-    this.gCharts.setOnLoadCallback(() => { this.drawAllCharts(); });
+    if (this.gCharts) {
+      this.gCharts.setOnLoadCallback(() => { this.drawAllCharts(); });
+    }
     this.dirty = false;
     if (!this.dataManager) {
       this.dataManager = new GalyleoDataManager(this);
@@ -1231,8 +1236,12 @@ class DashboardCommon extends ViewModel {
    */
   async _loadGoogleChartPackages (packageList = ['corechart', 'map', 'charteditor']) {
     // await promise.waitFor(20 * 1000, () => !!window.google);
-    await loadViaScript('https://www.gstatic.com/charts/loader.js');
-    await this.gCharts.load('current', { packages: packageList, mapsApiKey: 'AIzaSyA4uHMmgrSNycQGwdF3PSkbuNW49BAwN1I' });
+    while (!window.google) {
+      await loadViaScript('https://www.gstatic.com/charts/loader.js');
+      if (this.gCharts) {
+        await this.gCharts.load('current', { packages: packageList, mapsApiKey: 'AIzaSyA4uHMmgrSNycQGwdF3PSkbuNW49BAwN1I' });
+      }
+    }
   }
 
   /**
