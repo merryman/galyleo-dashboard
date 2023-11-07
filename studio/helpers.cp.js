@@ -10,7 +10,7 @@ import { Toggle } from './inputs/toggle.cp.js';
 import { URL } from 'esm://cache/npm:@jspm/core@2.0.0-beta.26/nodelibs/url';
 import { DefaultList } from 'lively.components/list.cp.js';
 import { projectAsset } from 'lively.project/helpers.js';
-import { dashboardStoreServer } from '../config.js';
+// import { dashboardStoreServer } from '../config.js';
 
 /**
  * A Bug Reporter.  Very simple: just bundles up the input fields and uses
